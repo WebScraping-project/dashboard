@@ -725,8 +725,7 @@ class FilterWidget extends StatelessWidget {
   final List<String>? selectedFilters;
   final Function(List<String>)? onFiltersChanged;
 
-  const FilterWidget({Key? key, this.selectedFilters, this.onFiltersChanged})
-      : super(key: key);
+  const FilterWidget({super.key, this.selectedFilters, this.onFiltersChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -739,7 +738,7 @@ class FilterWidget extends StatelessWidget {
             padding:
                 EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.07),
             child: const Text(
-              'Trier par :',
+              'Filtres :',
               style: TextStyle(
                 fontSize: 24.0,
                 color: Colors.white,
@@ -780,6 +779,7 @@ class FilterButton extends StatelessWidget {
   final Function(List<String>)? onFiltersChanged;
 
   const FilterButton({
+    super.key,
     required this.title,
     required this.filterKey,
     required this.selectedFilters,
