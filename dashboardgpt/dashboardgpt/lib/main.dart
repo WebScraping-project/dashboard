@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'attraction.dart';
 import 'liste_attractions.dart';
 import 'liste_attraction_studio.dart'; // Importer le fichier pour les attractions des Disney Studios
-import 'dart:math';
+//import 'etoiles.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Attraction> filteredStudioAttractions = [];
   List<Attraction> favoriteAttractions = [];
   String selectedView = 'Disneyland';
-  String? selectedFilter;
+  List<String> selectedFilters = [];
 
   @override
   void initState() {
@@ -103,15 +103,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               FilterWidget(
-                selectedFilter: selectedFilter,
-                onFilterChanged: (filter) {
+                selectedFilters: selectedFilters,
+                onFiltersChanged: (updatedFilters) {
                   setState(() {
-                    if (selectedFilter == filter) {
-                      selectedFilter = null;
-                    } else {
-                      selectedFilter = filter;
-                    }
-                    applyFilter();
+                    selectedFilters =
+                        updatedFilters; // Mettre à jour la liste de filtres lorsqu'ils changent
+                    applyFilters(selectedFilters);
                   });
                 },
               ),
@@ -639,9 +636,9 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
-        Positioned.fill(
-          child: StarBackground(),
-        ),
+        // Positioned.fill(
+        //   child: StarBackground(),
+        // ),
       ]),
     );
   }
@@ -686,106 +683,55 @@ class _MyHomePageState extends State<MyHomePage> {
   void _onViewChanged(String? view) {
     setState(() {
       selectedView = view ?? 'Disneyland';
-      applyFilter();
+      applyFilters(selectedFilters ??
+          []); // Passer les filtres sélectionnés à applyFilters
     });
   }
 
-  void applyFilter() {
-    switch (selectedFilter) {
-      case 'waitTime':
-        filteredDisneylandAttractions
-            .sort((a, b) => a.waitTime.compareTo(b.waitTime));
-        filteredStudioAttractions
-            .sort((a, b) => a.waitTime.compareTo(b.waitTime));
-        break;
-      case 'favorites':
-        filteredDisneylandAttractions = disneylandAttractions
-            .where((attraction) => attraction.isFavorite)
-            .toList();
-        filteredStudioAttractions = studioAttractions
-            .where((attraction) => attraction.isFavorite)
-            .toList();
-        break;
-      case 'availability': // Ajout du cas pour le tri par disponibilité
-        filteredDisneylandAttractions.sort((a, b) => a.isAvailable
-            ? -1
-            : 1); // Trier Disneyland en fonction de la disponibilité
-        filteredStudioAttractions.sort((a, b) => a.isAvailable
-            ? -1
-            : 1); // Trier Studio en fonction de la disponibilité
-        break;
+  void applyFilters(List<String> selectedFilters) {
+    // Prend maintenant une liste de filtres
+    if (selectedFilters.isEmpty) {
+      // Aucun filtre sélectionné, ne rien faire ou afficher tout
+      return;
+    }
 
-      default:
-        filteredDisneylandAttractions = disneylandAttractions;
-        filteredStudioAttractions = studioAttractions;
+    // Appliquer chaque filtre sélectionné
+    for (String filter in selectedFilters) {
+      switch (filter) {
+        case 'waitTime':
+          filteredDisneylandAttractions
+              .sort((a, b) => a.waitTime.compareTo(b.waitTime));
+          filteredStudioAttractions
+              .sort((a, b) => a.waitTime.compareTo(b.waitTime));
+          break;
+        case 'favorites':
+          filteredDisneylandAttractions = disneylandAttractions
+              .where((attraction) => attraction.isFavorite)
+              .toList();
+          filteredStudioAttractions = studioAttractions
+              .where((attraction) => attraction.isFavorite)
+              .toList();
+          break;
+        case 'availability':
+          filteredDisneylandAttractions.sort((a, b) => a.isAvailable ? -1 : 1);
+          filteredStudioAttractions.sort((a, b) => a.isAvailable ? -1 : 1);
+          break;
+      }
     }
   }
-}
-
-class StarBackground extends StatelessWidget {
-  const StarBackground({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: CustomPaint(
-        painter: StarPainter(),
-      ),
-    );
-  }
-}
-
-class StarPainter extends CustomPainter {
-  List<Star> stars;
-
-  StarPainter() : stars = generateStars();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
-
-    for (var star in stars) {
-      canvas.drawCircle(Offset(star.x, star.y), star.radius, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
-
-List<Star> generateStars() {
-  final random = Random();
-  List<Star> stars = [];
-  for (int i = 0; i < 100; i++) {
-    final x = random.nextDouble() * 2000;
-    final y = random.nextDouble() *
-        1000; // ajustez la taille de l'écran selon vos besoins
-    final radius = random.nextDouble() * 1.5; // Taille des étoiles aléatoire
-    stars.add(Star(x: x, y: y, radius: radius));
-  }
-  return stars;
-}
-
-class Star {
-  final double x;
-  final double y;
-  final double radius;
-
-  Star({required this.x, required this.y, required this.radius});
 }
 
 class FilterWidget extends StatelessWidget {
-  final String? selectedFilter;
-  final Function(String)? onFilterChanged;
+  final List<String>? selectedFilters;
+  final Function(List<String>)? onFiltersChanged;
 
-  const FilterWidget({super.key, this.selectedFilter, this.onFilterChanged});
+  const FilterWidget({Key? key, this.selectedFilters, this.onFiltersChanged})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.121),
+      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.08),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -795,139 +741,98 @@ class FilterWidget extends StatelessWidget {
             child: const Text(
               'Trier par :',
               style: TextStyle(
-                //fontWeight: FontWeight.bold,
                 fontSize: 24.0,
                 color: Colors.white,
               ),
             ),
           ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.004,
+          SizedBox(width: MediaQuery.of(context).size.width * 0.004),
+          FilterButton(
+            title: 'Temps d\'attente',
+            filterKey: 'waitTime',
+            selectedFilters: selectedFilters,
+            onFiltersChanged: onFiltersChanged,
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.0),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 2,
-                  offset: const Offset(2, 3),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (onFilterChanged != null) {
-                  onFilterChanged!('waitTime');
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: selectedFilter == 'waitTime'
-                    ? Colors.green
-                    : Colors
-                        .white, // Change background color based on selection
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-              ),
-              child: Text(
-                'Temps d\'attente',
-                style: TextStyle(
-                  color: selectedFilter == 'waitTime'
-                      ? Colors.white
-                      : Colors.black, // Change text color based on selection
-                  fontSize: 18,
-                ),
-              ),
-            ),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.004),
+          FilterButton(
+            title: 'Favoris',
+            filterKey: 'favorites',
+            selectedFilters: selectedFilters,
+            onFiltersChanged: onFiltersChanged,
           ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.004,
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.0),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 2,
-                  offset: const Offset(2, 3),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (onFilterChanged != null) {
-                  onFilterChanged!('favorites');
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: selectedFilter == 'favorites'
-                    ? Colors.green
-                    : Colors
-                        .white, // Change background color based on selection
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-              ),
-              child: Text(
-                'Favoris',
-                style: TextStyle(
-                  color: selectedFilter == 'favorites'
-                      ? Colors.white
-                      : Colors.black, // Change text color based on selection
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.004,
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.0),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 2,
-                  offset: const Offset(2, 3),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (onFilterChanged != null) {
-                  onFilterChanged!('availability');
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: selectedFilter == 'availability'
-                    ? Colors.green
-                    : Colors
-                        .white, // Change background color based on selection
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-              ),
-              child: Text(
-                'Disponibilité',
-                style: TextStyle(
-                  color: selectedFilter == 'availability'
-                      ? Colors.white
-                      : Colors.black, // Change text color based on selection
-                  fontSize: 18,
-                ),
-              ),
-            ),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.004),
+          FilterButton(
+            title: 'Disponibilité',
+            filterKey: 'availability',
+            selectedFilters: selectedFilters,
+            onFiltersChanged: onFiltersChanged,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class FilterButton extends StatelessWidget {
+  final String title;
+  final String filterKey;
+  final List<String>? selectedFilters;
+  final Function(List<String>)? onFiltersChanged;
+
+  const FilterButton({
+    required this.title,
+    required this.filterKey,
+    required this.selectedFilters,
+    required this.onFiltersChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: const Offset(2, 3),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: () {
+          List<String> updatedFilters = List.from(selectedFilters ?? []);
+          if (updatedFilters.contains(filterKey)) {
+            updatedFilters.remove(filterKey);
+          } else {
+            updatedFilters.add(filterKey);
+          }
+          debugPrint('Updated filters: $updatedFilters');
+          if (onFiltersChanged != null) {
+            onFiltersChanged!(updatedFilters);
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              selectedFilters != null && selectedFilters!.contains(filterKey)
+                  ? Colors.green
+                  : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            color:
+                selectedFilters != null && selectedFilters!.contains(filterKey)
+                    ? Colors.white
+                    : Colors.black,
+            fontSize: 18,
+          ),
+        ),
       ),
     );
   }
